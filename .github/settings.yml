@@ -1,0 +1,6 @@
+_extends: gh-config
+
+repository:
+  description: This lib is used to set up cgroup directory tree according to configuration saved in zookeeper, and add pid to cgroup accordingly.
+  homepage: https://blog.openacid.com
+  topics: python, zookeeper
