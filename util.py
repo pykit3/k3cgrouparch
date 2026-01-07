@@ -18,7 +18,7 @@ def get_all_pids(pid):
     try:
         process = psutil.Process(pid)
 
-    except psutil.NoSuchProcess as e:
+    except psutil.NoSuchProcess:
         logger.info("process %d does not exist" % pid)
         return all_pids
 

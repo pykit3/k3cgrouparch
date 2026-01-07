@@ -52,7 +52,8 @@ class TestBlkio(unittest.TestCase):
         return
 
     def test_blkio_weight(self):
-        if k3ut.has_env("TRAVIS=true"):
+        # Skip on CI - cgroups v1 paths don't exist on cgroups v2 systems
+        if k3ut.has_env("TRAVIS=true") or k3ut.has_env("CI=true"):
             return
 
         manager = multiprocessing.Manager()

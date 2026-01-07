@@ -46,6 +46,10 @@ class TestCpu(unittest.TestCase):
         return
 
     def test_cpu_share(self):
+        # Skip on CI - cgroups v1 paths don't exist on cgroups v2 systems
+        if k3ut.has_env("CI=true"):
+            return
+
         manager = multiprocessing.Manager()
         result_dict = manager.dict()
 
