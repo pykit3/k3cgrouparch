@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "k3cgrouparch"
-version = "0.1.0"
+version = "0.1.1"
 description = "Set up cgroup directory tree and add pid to cgroup"
 readme = "README.md"
 license = {text = "MIT"}
