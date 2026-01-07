@@ -17,7 +17,6 @@ random.seed(time.time())
 
 
 class TestCpu(unittest.TestCase):
-
     def compute_work(self):
         i = 0
         while True:
@@ -30,21 +29,18 @@ class TestCpu(unittest.TestCase):
         time.sleep(0.2)
 
         start_time = time.time()
-        dd('worker %d %d started at: %f' %
-           (index, os.getpid(), start_time))
+        dd("worker %d %d started at: %f" % (index, os.getpid(), start_time))
 
         count = 0
         while True:
             self.compute_work()
             count += 1
-            dd('worker %d %d computed %d times' %
-               (index, os.getpid(), count))
+            dd("worker %d %d computed %d times" % (index, os.getpid(), count))
 
             if time.time() - start_time > duration:
                 break
 
-        dd('worker %d %d stoped at: %f' %
-           (index, os.getpid(), time.time()))
+        dd("worker %d %d stoped at: %f" % (index, os.getpid(), time.time()))
 
         result_dict[index] = count
         return
@@ -53,45 +49,42 @@ class TestCpu(unittest.TestCase):
         manager = multiprocessing.Manager()
         result_dict = manager.dict()
 
-        p1 = multiprocessing.Process(target=self.worker,
-                                     args=(1, 10, result_dict))
+        p1 = multiprocessing.Process(target=self.worker, args=(1, 10, result_dict))
         p1.daemon = True
         p1.start()
 
-        p2 = multiprocessing.Process(target=self.worker,
-                                     args=(2, 10, result_dict))
+        p2 = multiprocessing.Process(target=self.worker, args=(2, 10, result_dict))
         p2.daemon = True
         p2.start()
 
-        p3 = multiprocessing.Process(target=self.worker,
-                                     args=(3, 10, result_dict))
+        p3 = multiprocessing.Process(target=self.worker, args=(3, 10, result_dict))
         p3.daemon = True
         p3.start()
 
         arch_conf = {
-            'cpu': {
-                'sub_cgroup': {
-                    'test_cgroup_a': {
-                        'conf': {
-                            'share': 500,
-                            'pids': [p1.pid],
+            "cpu": {
+                "sub_cgroup": {
+                    "test_cgroup_a": {
+                        "conf": {
+                            "share": 500,
+                            "pids": [p1.pid],
                         },
                     },
-                    'test_cgroup_b': {
-                        'conf': {
-                            'share': 1000,
+                    "test_cgroup_b": {
+                        "conf": {
+                            "share": 1000,
                         },
-                        'sub_cgroup': {
-                            'test_cgroup_b_sub1': {
-                                'conf': {
-                                    'share': 100,
-                                    'pids': [p2.pid],
+                        "sub_cgroup": {
+                            "test_cgroup_b_sub1": {
+                                "conf": {
+                                    "share": 100,
+                                    "pids": [p2.pid],
                                 },
                             },
-                            'test_cgroup_b_sub2': {
-                                'conf': {
-                                    'share': 300,
-                                    'pids': [p3.pid],
+                            "test_cgroup_b_sub2": {
+                                "conf": {
+                                    "share": 300,
+                                    "pids": [p3.pid],
                                 },
                             },
                         },
@@ -101,10 +94,8 @@ class TestCpu(unittest.TestCase):
         }
 
         context = {
-            'cgroup_dir': '/sys/fs/cgroup',
-            'arch_conf': {
-                'value': arch_conf
-            },
+            "cgroup_dir": "/sys/fs/cgroup",
+            "arch_conf": {"value": arch_conf},
         }
 
         cgroup_manager.build_all_subsystem_cgroup_arch(context)
@@ -116,10 +107,10 @@ class TestCpu(unittest.TestCase):
 
         dd(result_dict)
 
-        for cgrou_name in arch_conf['cpu']['sub_cgroup'].keys():
+        for cgrou_name in arch_conf["cpu"]["sub_cgroup"].keys():
             cgroup_util.remove_cgroup(
-                os.path.join(context['cgroup_dir'], 'cpu'),
-                os.path.join(context['cgroup_dir'], 'cpu', cgrou_name))
+                os.path.join(context["cgroup_dir"], "cpu"), os.path.join(context["cgroup_dir"], "cpu", cgrou_name)
+            )
 
         level1_rate = float(result_dict[2] + result_dict[3]) / result_dict[1]
         dd(level1_rate)

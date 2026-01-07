@@ -19,5 +19,6 @@ configuration saved in zookeeper, and add pid to cgroup accordingly.
 # from .proc import CalledProcessError
 # from .proc import ProcError
 
-__version__ = "0.1.0"
-__name__ = "k3cgrouparch"
+from importlib.metadata import version
+
+__version__ = version("k3cgrouparch")

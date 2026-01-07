@@ -8,30 +8,30 @@ logger = logging.getLogger(__name__)
 
 
 def set_cgroup(cgroup_path, conf):
-    if 'weight' in conf:
-        weight_file = os.path.join(cgroup_path, 'blkio.weight')
+    if "weight" in conf:
+        weight_file = os.path.join(cgroup_path, "blkio.weight")
 
-        weight = str(conf['weight'])
+        weight = str(conf["weight"])
 
         k3fs.fwrite(weight_file, weight, fsync=False)
-        logger.info('write: %s to file: %s' % (weight, weight_file))
+        logger.info("write: %s to file: %s" % (weight, weight_file))
 
-    pids = conf.get('pids')
+    pids = conf.get("pids")
 
     if pids is None:
         return
 
     cgroup_util.add_pids(cgroup_path, pids)
-    logger.info('add pids: %s to cgroup: %s' % (repr(pids), cgroup_path))
+    logger.info("add pids: %s to cgroup: %s" % (repr(pids), cgroup_path))
 
 
 def reset_statistics(cgroup_path):
-    reset_file = os.path.join(cgroup_path, 'blkio.reset_stats')
-    k3fs.fwrite(reset_file, '1', fsync=False)
+    reset_file = os.path.join(cgroup_path, "blkio.reset_stats")
+    k3fs.fwrite(reset_file, "1", fsync=False)
 
 
 def account(cgroup_path):
-    file_name = os.path.join(cgroup_path, 'blkio.io_service_bytes_recursive')
+    file_name = os.path.join(cgroup_path, "blkio.io_service_bytes_recursive")
 
     # file content format:
     # 8:0 Read 1053712384
@@ -45,12 +45,12 @@ def account(cgroup_path):
     # Total 82983095808
 
     content = k3fs.fwrite(file_name)
-    lines = content.split('\n')[:-1]
+    lines = content.split("\n")[:-1]
 
     r = {}
     for line in lines:
         parts = line.split()
-        if parts[1] in ('Read', 'Write'):
+        if parts[1] in ("Read", "Write"):
             r[parts[0]] = r.get(parts[0]) or {}
             r[parts[0]][parts[1]] = int(parts[2])
 

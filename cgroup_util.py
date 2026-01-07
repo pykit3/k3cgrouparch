@@ -12,24 +12,23 @@ def create_cgroup(cgroup_path):
 
 
 def add_pids(cgroup_path, pids):
-    task_file = os.path.join(cgroup_path, 'tasks')
+    task_file = os.path.join(cgroup_path, "tasks")
 
     for pid in pids:
         try:
             k3fs.fwrite(task_file, str(pid), fsync=False)
         except Exception as e:
-            logger.info('failed to add pid: %s to file: %s, %s' %
-                        (str(pid), task_file, repr(e)))
+            logger.info("failed to add pid: %s to file: %s, %s" % (str(pid), task_file, repr(e)))
     return
 
 
 def clear_pids(subsystem_dir, cgroup_path):
-    task_file = os.path.join(cgroup_path, 'tasks')
-    f = open(task_file, 'r')
+    task_file = os.path.join(cgroup_path, "tasks")
+    f = open(task_file, "r")
 
     while True:
         line = f.readline()
-        if line == '':
+        if line == "":
             break
 
         pid = line.strip()

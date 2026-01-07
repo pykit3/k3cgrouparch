@@ -1,7 +1,6 @@
 # k3cgrouparch
 
 [![Action-CI](https://github.com/pykit3/k3cgrouparch/actions/workflows/python-package.yml/badge.svg)](https://github.com/pykit3/k3cgrouparch/actions/workflows/python-package.yml)
-[![Build Status](https://travis-ci.com/pykit3/k3cgrouparch.svg?branch=master)](https://travis-ci.com/pykit3/k3cgrouparch)
 [![Documentation Status](https://readthedocs.org/projects/k3cgrouparch/badge/?version=stable)](https://k3cgrouparch.readthedocs.io/en/stable/?badge=stable)
 [![Package](https://img.shields.io/pypi/pyversions/k3cgrouparch)](https://pypi.org/project/k3cgrouparch)
 
