@@ -1,10 +1,11 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python
 # coding: utf-8
 
 import mmap
 import multiprocessing
 import os
 import random
+import sys
 import time
 import unittest
 
@@ -18,6 +19,15 @@ dd = k3ut.dd
 random.seed(time.time())
 
 base_dir = os.path.dirname(__file__)
+
+
+def _should_skip_cgroup_test() -> bool:
+    """Skip cgroup tests on non-Linux or CI environments."""
+    if sys.platform != "linux":
+        return True
+    if k3ut.has_env("TRAVIS=true") or k3ut.has_env("CI=true"):
+        return True
+    return False
 
 
 class TestBlkio(unittest.TestCase):
@@ -52,8 +62,7 @@ class TestBlkio(unittest.TestCase):
         return
 
     def test_blkio_weight(self):
-        # Skip on CI - cgroups v1 paths don't exist on cgroups v2 systems
-        if k3ut.has_env("TRAVIS=true") or k3ut.has_env("CI=true"):
+        if _should_skip_cgroup_test():
             return
 
         manager = multiprocessing.Manager()

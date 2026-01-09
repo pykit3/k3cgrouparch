@@ -1,9 +1,10 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python
 # coding: utf-8
 
 import multiprocessing
 import os
 import random
+import sys
 import time
 import unittest
 
@@ -14,6 +15,15 @@ from k3cgrouparch import cgroup_util
 dd = k3ut.dd
 
 random.seed(time.time())
+
+
+def _should_skip_cgroup_test() -> bool:
+    """Skip cgroup tests on non-Linux or CI environments."""
+    if sys.platform != "linux":
+        return True
+    if k3ut.has_env("CI=true"):
+        return True
+    return False
 
 
 class TestCpu(unittest.TestCase):
@@ -46,8 +56,7 @@ class TestCpu(unittest.TestCase):
         return
 
     def test_cpu_share(self):
-        # Skip on CI - cgroups v1 paths don't exist on cgroups v2 systems
-        if k3ut.has_env("CI=true"):
+        if _should_skip_cgroup_test():
             return
 
         manager = multiprocessing.Manager()
