@@ -3,13 +3,14 @@ import multiprocessing
 import os
 import random
 import sys
+import tempfile
 import time
 import unittest
 
 import k3fs
 import k3ut
 
-from k3cgrouparch import cgroup_manager, cgroup_util
+from k3cgrouparch import blkio, cgroup_manager, cgroup_util
 
 dd = k3ut.dd
 
@@ -26,6 +27,31 @@ def _should_skip_cgroup_test() -> bool:
 
 
 class TestBlkio(unittest.TestCase):
+    def test_account(self):
+        cgroup_path = tempfile.mkdtemp()
+        k3fs.fwrite(
+            cgroup_path,
+            "blkio.io_service_bytes_recursive",
+            "8:0 Read 1053712384\n"
+            "8:0 Write 81929383424\n"
+            "8:0 Sync 80865775616\n"
+            "8:0 Async 2117320192\n"
+            "8:0 Total 82983095808\n"
+            "8:16 Read 1024\n"
+            "8:16 Write 2048\n"
+            "Total 82983098880\n",
+        )
+
+        got = blkio.account(cgroup_path)
+
+        want = {
+            "8:0": {"Read": 1053712384, "Write": 81929383424},
+            "8:16": {"Read": 1024, "Write": 2048},
+        }
+        self.assertEqual(want, got)
+
+        k3fs.remove(cgroup_path)
+
     def worker(self, index, duration, result_dict):
         # wait for the cgroup directory tree to be setup.
         time.sleep(0.2)

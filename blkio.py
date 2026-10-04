@@ -45,7 +45,7 @@ def account(cgroup_path):
     # ...
     # Total 82983095808
 
-    content = k3fs.fwrite(file_name)
+    content = k3fs.fread(file_name)
     lines = content.split("\n")[:-1]
 
     r = {}
