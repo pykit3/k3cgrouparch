@@ -2,15 +2,13 @@ import logging
 import os
 import time
 
-import redis
-from kazoo.client import KazooClient
-
 import k3thread
 import k3utfjson
 import k3zkutil
-from k3cgrouparch import account
-from k3cgrouparch import cgroup_manager
-from k3cgrouparch import communicate
+import redis
+from kazoo.client import KazooClient
+
+from k3cgrouparch import account, cgroup_manager, communicate
 
 logger = logging.getLogger(__name__)
 
@@ -35,11 +33,11 @@ def get_zk_client(context):
 
 
 def update_conf(event):
-    logger.info("update conf triggered at: %f" % time.time())
+    logger.info(f"update conf triggered at: {time.time():f}")
 
     context = global_value["context"]
 
-    zk_path = "%s/arch_conf" % context["zk_prefix"]
+    zk_path = f"{context['zk_prefix']}/arch_conf"
 
     while True:
         try:
@@ -47,8 +45,8 @@ def update_conf(event):
             resp = zk_client.get(zk_path, watch=update_conf)
             break
 
-        except Exception as e:
-            logger.exception("failed to get from zk: " + repr(e))
+        except Exception:
+            logger.exception("failed to get from zk")
             time.sleep(5)
 
     context["arch_conf"] = {
@@ -56,13 +54,13 @@ def update_conf(event):
         "value": k3utfjson.load(resp[0]),
     }
 
-    logger.info("arch conf in zk changed at: %f, current verrsion: %d" % (time.time(), resp[1].version))
+    logger.info(f"arch conf in zk changed at: {time.time():f}, current verrsion: {resp[1].version:d}")
 
     cgroup_manager.build_all_subsystem_cgroup_arch(context)
 
 
 def on_lost(stat):
-    logger.warn("zk client on lost, stat is: %s, about to exit" % str(stat))
+    logger.warning(f"zk client on lost, stat is: {stat}, about to exit")
     os._exit(2)
 
 
@@ -73,7 +71,7 @@ def init_arch_conf(context):
                 context["zk_client"] = get_zk_client(context)
                 context["zk_client"].add_listener(on_lost)
 
-            zk_path = "%s/arch_conf" % context["zk_prefix"]
+            zk_path = f"{context['zk_prefix']}/arch_conf"
             resp = context["zk_client"].get(zk_path, watch=update_conf)
 
             context["arch_conf"] = {
@@ -83,8 +81,9 @@ def init_arch_conf(context):
 
             return
 
-        except Exception as e:
-            logger.warn("failed to get arch conf from zk: %s" % repr(e))
+        # The manager cannot start without the arch conf, so it retries on any failure.
+        except Exception as e:  # noqa: BLE001
+            logger.warning(f"failed to get arch conf from zk: {e!r}")
 
             k3zkutil.close_zk(context["zk_client"])
             context["zk_client"] = None
@@ -100,7 +99,7 @@ def update_cgexec_arg(cgexec_arg, subsystem_name, cgroup_relative_path, cgroup_c
         sub_relative_path = cgroup_relative_path + "/" + sub_cgroup_name
 
         if sub_cgroup_name in cgexec_arg:
-            cgexec_arg[sub_cgroup_name] += " -g %s:%s" % (subsystem_name, sub_relative_path)
+            cgexec_arg[sub_cgroup_name] += f" -g {subsystem_name}:{sub_relative_path}"
 
         update_cgexec_arg(cgexec_arg, subsystem_name, sub_relative_path, sub_cgroup_conf)
 
@@ -127,7 +126,7 @@ def get_cgexec_arg(cgroup_names, **argkv):
     try:
         zk_client = get_zk_client(context)
 
-        zk_path = "%s/arch_conf" % context["zk_prefix"]
+        zk_path = f"{context['zk_prefix']}/arch_conf"
         resp = zk_client.get(zk_path)
 
         k3zkutil.close_zk(zk_client)
@@ -146,8 +145,8 @@ def get_cgexec_arg(cgroup_names, **argkv):
 
         return cgexec_arg
 
-    except Exception as e:
-        logger.exception("failed to get cgexec arg: " + repr(e))
+    except Exception:
+        logger.exception("failed to get cgexec arg")
         return cgexec_arg
 
 

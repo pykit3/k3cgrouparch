@@ -1,6 +1,3 @@
-#!/usr/bin/env python
-# coding: utf-8
-
 import mmap
 import multiprocessing
 import os
@@ -11,8 +8,8 @@ import unittest
 
 import k3fs
 import k3ut
-from k3cgrouparch import cgroup_manager
-from k3cgrouparch import cgroup_util
+
+from k3cgrouparch import cgroup_manager, cgroup_util
 
 dd = k3ut.dd
 
@@ -25,9 +22,7 @@ def _should_skip_cgroup_test() -> bool:
     """Skip cgroup tests on non-Linux or CI environments."""
     if sys.platform != "linux":
         return True
-    if k3ut.has_env("TRAVIS=true") or k3ut.has_env("CI=true"):
-        return True
-    return False
+    return k3ut.has_env("TRAVIS=true") or k3ut.has_env("CI=true")
 
 
 class TestBlkio(unittest.TestCase):
@@ -39,27 +34,26 @@ class TestBlkio(unittest.TestCase):
         data = " " * 1024 * 1024 * 2
         m.write(data.encode())
 
-        file_path = os.path.join(base_dir, "test_file_%d" % index)
+        file_path = os.path.join(base_dir, f"test_file_{index}")
         f = os.open(file_path, os.O_CREAT | os.O_DIRECT | os.O_TRUNC | os.O_RDWR)
 
         start_time = time.time()
-        dd("worker %d %d started at: %f" % (index, os.getpid(), start_time))
+        dd(f"worker {index} {os.getpid()} started at: {start_time:f}")
 
         count = 0
         while True:
             os.write(f, m)
             count += 1
-            dd("worker %d %d wrote %d times" % (index, os.getpid(), count))
+            dd(f"worker {index} {os.getpid()} wrote {count} times")
 
             if time.time() - start_time > duration:
                 break
 
-        dd("worker %d %d stoped at: %f" % (index, os.getpid(), time.time()))
+        dd(f"worker {index} {os.getpid()} stoped at: {time.time():f}")
 
         result_dict[index] = count
 
         os.close(f)
-        return
 
     def test_blkio_weight(self):
         if _should_skip_cgroup_test():
@@ -142,13 +136,13 @@ class TestBlkio(unittest.TestCase):
         p3.join()
         p4.join()
 
-        for cgrou_name in arch_conf["blkio"]["sub_cgroup"].keys():
+        for cgrou_name in arch_conf["blkio"]["sub_cgroup"]:
             cgroup_util.remove_cgroup(
                 os.path.join(context["cgroup_dir"], "blkio"), os.path.join(context["cgroup_dir"], "blkio", cgrou_name)
             )
 
         for i in range(1, 5):
-            k3fs.remove(os.path.join(base_dir, "test_file_%d" % i))
+            k3fs.remove(os.path.join(base_dir, f"test_file_{i}"))
 
         dd(result_dict)
 

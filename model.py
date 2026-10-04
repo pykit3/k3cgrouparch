@@ -1,5 +1,4 @@
-from k3cgrouparch import blkio
-from k3cgrouparch import cpu
+from k3cgrouparch import blkio, cpu
 
 subsystem = {
     "cpu": {

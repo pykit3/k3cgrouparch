@@ -2,6 +2,7 @@ import logging
 import os
 
 import k3fs
+
 from k3cgrouparch import cgroup_util
 
 logger = logging.getLogger(__name__)
@@ -16,7 +17,7 @@ def set_cgroup(cgroup_path, conf):
     share_file = os.path.join(cgroup_path, "cpu.shares")
 
     k3fs.fwrite(share_file, share, fsync=False)
-    logger.info("write: %s to file: %s" % (share, share_file))
+    logger.info(f"write: {share} to file: {share_file}")
 
     pids = conf.get("pids")
 
@@ -24,7 +25,7 @@ def set_cgroup(cgroup_path, conf):
         return
 
     cgroup_util.add_pids(cgroup_path, pids)
-    logger.info("add pids: %s to cgroup: %s" % (repr(pids), cgroup_path))
+    logger.info(f"add pids: {pids!r} to cgroup: {cgroup_path}")
 
 
 def reset_statistics(cgroup_path):

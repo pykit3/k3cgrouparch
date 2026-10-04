@@ -1,14 +1,9 @@
-#!/usr/bin/env python
-# coding: utf-8
-
 import logging
 from collections import OrderedDict
 
-from geventwebsocket import Resource
-from geventwebsocket import WebSocketApplication
-from geventwebsocket import WebSocketServer
-
 import k3utfjson
+from geventwebsocket import Resource, WebSocketApplication, WebSocketServer
+
 from k3cgrouparch import account
 
 global_value = {}
@@ -27,7 +22,7 @@ class CgroupArchWebSocketApplication(WebSocketApplication):
         try:
             self.process_message(message_str)
         except Exception as e:
-            logger.exception("failed to process message: " + repr(e))
+            logger.exception("failed to process message")
             self.send_json({"error": repr(e)})
 
     def on_close(self, reason):
@@ -50,7 +45,7 @@ class CgroupArchWebSocketApplication(WebSocketApplication):
         elif cmd == "get_conf":
             return global_value["context"]["arch_conf"]
         else:
-            return {"error": "invalid cmd: %s" % cmd}
+            return {"error": f"invalid cmd: {cmd}"}
 
     def show_account(self, args):
         return account.show(global_value["context"], args)

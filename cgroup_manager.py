@@ -3,9 +3,8 @@ import os
 import time
 
 import k3fs
-from k3cgrouparch import cgroup_util
-from k3cgrouparch import model
-from k3cgrouparch import util
+
+from k3cgrouparch import cgroup_util, model, util
 
 logger = logging.getLogger(__name__)
 
@@ -14,11 +13,11 @@ def get_pids_of_one_pid_file(pid_file):
     try:
         pid = util.get_pid_from_file(pid_file)
         pids = util.get_all_pids(pid)
-        logger.info("pids for pid file: %s is %s" % (pid_file, pids))
+        logger.info(f"pids for pid file: {pid_file} is {pids}")
         return pids
 
-    except Exception as e:
-        logger.exception("failed to get pids of pid file: %s, %s" % (pid_file, repr(e)))
+    except Exception:
+        logger.exception(f"failed to get pids of pid file: {pid_file}")
         return []
 
 
@@ -40,8 +39,8 @@ def update_one_cgroup_pids(cgroup_path, cgroup_conf, context):
             if pid_files is not None:
                 cgroup_conf["conf"]["pids"] = get_cgroup_pids(pid_files)
 
-        except Exception as e:
-            logger.exception("failed to get pid files of: %s, %s" % (cgroup_name, repr(e)))
+        except Exception:
+            logger.exception(f"failed to get pid files of: {cgroup_name}")
 
     sub_cgroup = cgroup_conf.get("sub_cgroup")
     if sub_cgroup is None:
@@ -64,9 +63,8 @@ def update_cgroup_pids(context):
 
         try:
             update_one_cgroup_pids(cgroup_path, cgroup_conf, context)
-        except Exception as e:
-            logger.exception("failed to update pids of cgroup: %s, %s" % (cgroup_path, repr(e)))
-    return
+        except Exception:
+            logger.exception(f"failed to update pids of cgroup: {cgroup_path}")
 
 
 def build_cgroup_arch(subsystem_dir, cgroup_path, cgroup_conf, protected_cgroup):
@@ -77,7 +75,7 @@ def build_cgroup_arch(subsystem_dir, cgroup_path, cgroup_conf, protected_cgroup)
     for sub_dir in sub_dirs:
         if sub_dir not in sub_cgroup:
             path = os.path.join(cgroup_path, sub_dir)
-            logger.warn("unknown cgroup: %s" % path)
+            logger.warning(f"unknown cgroup: {path}")
 
             if sub_dir in protected_cgroup:
                 continue
@@ -93,8 +91,6 @@ def build_cgroup_arch(subsystem_dir, cgroup_path, cgroup_conf, protected_cgroup)
             logger.info("create cgroup: %s", sub_cgroup_path)
 
         build_cgroup_arch(subsystem_dir, sub_cgroup_path, sub_cgroup_conf, protected_cgroup)
-
-    return
 
 
 def build_all_subsystem_cgroup_arch(context):
@@ -142,9 +138,8 @@ def set_cgroup(context):
 
         try:
             set_one_cgroup(subsystem_model, cgroup_path, cgroup_conf)
-        except Exception as e:
-            logger.exception("failed to set cgroup: %s, %s" % (cgroup_path, repr(e)))
-    return
+        except Exception:
+            logger.exception(f"failed to set cgroup: {cgroup_path}")
 
 
 def loop_set_cgroup(context):
@@ -154,14 +149,14 @@ def loop_set_cgroup(context):
         set_cgroup(context)
 
         time_used = time.time() - start_time
-        logger.info("set cgroup at: %f, time used: %f" % (start_time, time_used))
+        logger.info(f"set cgroup at: {start_time:f}, time used: {time_used:f}")
 
         time.sleep(context["tasks_update_interval"])
 
 
 def reset_statistics_one_cgroup(subsystem_model, cgroup_path, cgroup_conf):
     subsystem_model["reset_statistics"](cgroup_path)
-    logger.info("reset statistics of cgroup: %s" % cgroup_path)
+    logger.info(f"reset statistics of cgroup: {cgroup_path}")
 
     sub_cgroup = cgroup_conf.get("sub_cgroup")
     if sub_cgroup is None:
@@ -185,6 +180,5 @@ def reset_statistics(context):
 
         try:
             reset_statistics_one_cgroup(subsystem_model, cgroup_path, cgroup_conf)
-        except Exception as e:
-            logger.exception("failed to reset statistics of cgroup: %s, %s" % (cgroup_path, repr(e)))
-    return
+        except Exception:
+            logger.exception(f"failed to reset statistics of cgroup: {cgroup_path}")

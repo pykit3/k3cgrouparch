@@ -20,7 +20,7 @@ pip install k3cgrouparch
 from k3cgrouparch import manager
 
 # Initialize cgroup manager with zookeeper config
-mgr = manager.Manager(zk_hosts='127.0.0.1:2181')
+mgr = manager.Manager(zk_hosts="127.0.0.1:2181")
 ```
 
 ## API Reference

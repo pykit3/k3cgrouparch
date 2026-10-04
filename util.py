@@ -1,8 +1,7 @@
 import logging
 
-import psutil
-
 import k3fs
+import psutil
 
 logger = logging.getLogger(__name__)
 
@@ -19,11 +18,11 @@ def get_all_pids(pid):
         process = psutil.Process(pid)
 
     except psutil.NoSuchProcess:
-        logger.info("process %d does not exist" % pid)
+        logger.info(f"process {pid:d} does not exist")
         return all_pids
 
-    except Exception as e:
-        logger.exception("faild to get process of pid: %d, %s" % (pid, repr(e)))
+    except Exception:
+        logger.exception(f"faild to get process of pid: {pid:d}")
         return all_pids
 
     all_pids.append(process.pid)

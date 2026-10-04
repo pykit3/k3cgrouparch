@@ -3,6 +3,7 @@ import os
 import time
 
 import k3utfjson
+
 from k3cgrouparch import model
 
 logger = logging.getLogger(__name__)
@@ -45,7 +46,7 @@ def _run(context, slot_number):
 
     redis_client = context["redis_client"]
 
-    key_name = "%s/account/%d" % (context["redis_prefix"], slot_number)
+    key_name = f"{context['redis_prefix']}/account/{slot_number}"
 
     redis_client.set(key_name, k3utfjson.dump(result))
     redis_client.expire(key_name, context["redis_expire_time"])
@@ -55,13 +56,13 @@ def run(context):
     while True:
         try:
             start_ts = time.time()
-            slot_number = int(round(start_ts))
+            slot_number = round(start_ts)
 
             _run(context, slot_number)
 
             end_ts = time.time()
 
-            logger.info("account at: %f, time used: %f" % (start_ts, end_ts - start_ts))
+            logger.info(f"account at: {start_ts:f}, time used: {end_ts - start_ts:f}")
 
             to_sleep = slot_number + 1 - end_ts
             if to_sleep <= 0:
@@ -70,8 +71,8 @@ def run(context):
 
             time.sleep(to_sleep)
 
-        except Exception as e:
-            logger.exception("failed to account: %s" % repr(e))
+        except Exception:
+            logger.exception("failed to account")
             time.sleep(1)
 
 
@@ -86,7 +87,7 @@ def show(context, args):
     redis_client = context["redis_client"]
 
     for slot_number in range(start_slot, end_slot + 1):
-        key_name = "%s/account/%d" % (context["redis_prefix"], slot_number)
+        key_name = f"{context['redis_prefix']}/account/{slot_number}"
 
         value_str = redis_client.get(key_name)
         if value_str is None:

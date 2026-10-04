@@ -1,6 +1,3 @@
-#!/usr/bin/env python
-# coding: utf-8
-
 import multiprocessing
 import os
 import random
@@ -9,8 +6,8 @@ import time
 import unittest
 
 import k3ut
-from k3cgrouparch import cgroup_manager
-from k3cgrouparch import cgroup_util
+
+from k3cgrouparch import cgroup_manager, cgroup_util
 
 dd = k3ut.dd
 
@@ -21,9 +18,7 @@ def _should_skip_cgroup_test() -> bool:
     """Skip cgroup tests on non-Linux or CI environments."""
     if sys.platform != "linux":
         return True
-    if k3ut.has_env("CI=true"):
-        return True
-    return False
+    return k3ut.has_env("CI=true")
 
 
 class TestCpu(unittest.TestCase):
@@ -39,21 +34,20 @@ class TestCpu(unittest.TestCase):
         time.sleep(0.2)
 
         start_time = time.time()
-        dd("worker %d %d started at: %f" % (index, os.getpid(), start_time))
+        dd(f"worker {index} {os.getpid()} started at: {start_time:f}")
 
         count = 0
         while True:
             self.compute_work()
             count += 1
-            dd("worker %d %d computed %d times" % (index, os.getpid(), count))
+            dd(f"worker {index} {os.getpid()} computed {count} times")
 
             if time.time() - start_time > duration:
                 break
 
-        dd("worker %d %d stoped at: %f" % (index, os.getpid(), time.time()))
+        dd(f"worker {index} {os.getpid()} stoped at: {time.time():f}")
 
         result_dict[index] = count
-        return
 
     def test_cpu_share(self):
         if _should_skip_cgroup_test():
@@ -120,7 +114,7 @@ class TestCpu(unittest.TestCase):
 
         dd(result_dict)
 
-        for cgrou_name in arch_conf["cpu"]["sub_cgroup"].keys():
+        for cgrou_name in arch_conf["cpu"]["sub_cgroup"]:
             cgroup_util.remove_cgroup(
                 os.path.join(context["cgroup_dir"], "cpu"), os.path.join(context["cgroup_dir"], "cpu", cgrou_name)
             )
