@@ -25,10 +25,14 @@ classifiers = [
     "Programming Language :: Python :: 3.14",
 ]
 dependencies = [
+    "gevent-websocket",
     "k3fs",
     "k3thread",
     "k3utfjson",
     "k3zkutil",
+    "kazoo",
+    "psutil",
+    "redis",
 ]
 
 [project.urls]
