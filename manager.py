@@ -125,11 +125,11 @@ def get_cgexec_arg(cgroup_names, **argkv):
         cgexec_arg[cgroup_name] = ""
 
     zk_client = get_zk_client(context)
-
-    zk_path = f"{context['zk_prefix']}/arch_conf"
-    resp = zk_client.get(zk_path)
-
-    k3zkutil.close_zk(zk_client)
+    try:
+        zk_path = f"{context['zk_prefix']}/arch_conf"
+        resp = zk_client.get(zk_path)
+    finally:
+        k3zkutil.close_zk(zk_client)
 
     context["arch_conf"] = {
         "version": resp[1].version,

@@ -1,6 +1,7 @@
 import unittest
 from unittest import mock
 
+from kazoo.client import KazooClient
 from kazoo.exceptions import ConnectionLoss
 
 from k3cgrouparch import manager
@@ -14,9 +15,9 @@ argkv = {
 
 class TestGetCgexecArg(unittest.TestCase):
     def test_zk_error(self):
-        # A failed lookup must not look like a configuration without cgroup limits.
+        # A failed lookup must not look like a configuration without cgroup limits, and must not leak the client.
         err = ConnectionLoss()
-        zk_client = mock.Mock()
+        zk_client = mock.Mock(spec=KazooClient)
         zk_client.get.side_effect = err
 
         with (
@@ -26,3 +27,5 @@ class TestGetCgexecArg(unittest.TestCase):
             manager.get_cgexec_arg(["test_cgroup_a"], **argkv)
 
         self.assertIs(err, ctx.exception)
+        zk_client.stop.assert_called_once_with()
+        zk_client.close.assert_called_once_with()
