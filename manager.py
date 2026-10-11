@@ -111,6 +111,7 @@ def get_cgexec_arg(cgroup_names, **argkv):
     :param argkv:the same as that in `manager.run`, but only `cgroup_dir`,
     `get_zk_host`, `zk_prefix`, `zk_auth_data` are needed.
     :return: A dict contains argument for `cgexec` of each input cgroup.
+    It raises the error of reading the conf from zookeeper or building the cgroup directory tree.
     """
     context = {
         "cgroup_dir": argkv.get("cgroup_dir", "/sys/fs/cgroup"),
@@ -123,31 +124,26 @@ def get_cgexec_arg(cgroup_names, **argkv):
     for cgroup_name in cgroup_names:
         cgexec_arg[cgroup_name] = ""
 
-    try:
-        zk_client = get_zk_client(context)
+    zk_client = get_zk_client(context)
 
-        zk_path = f"{context['zk_prefix']}/arch_conf"
-        resp = zk_client.get(zk_path)
+    zk_path = f"{context['zk_prefix']}/arch_conf"
+    resp = zk_client.get(zk_path)
 
-        k3zkutil.close_zk(zk_client)
+    k3zkutil.close_zk(zk_client)
 
-        context["arch_conf"] = {
-            "version": resp[1].version,
-            "value": k3utfjson.load(resp[0]),
-        }
-        cgroup_manager.build_all_subsystem_cgroup_arch(context)
+    context["arch_conf"] = {
+        "version": resp[1].version,
+        "value": k3utfjson.load(resp[0]),
+    }
+    cgroup_manager.build_all_subsystem_cgroup_arch(context)
 
-        arch_conf_value = context["arch_conf"]["value"]
-        for subsystem_name, subsystem_conf in arch_conf_value.items():
-            cgroup_relative_path = ""
-            cgroup_conf = subsystem_conf
-            update_cgexec_arg(cgexec_arg, subsystem_name, cgroup_relative_path, cgroup_conf)
+    arch_conf_value = context["arch_conf"]["value"]
+    for subsystem_name, subsystem_conf in arch_conf_value.items():
+        cgroup_relative_path = ""
+        cgroup_conf = subsystem_conf
+        update_cgexec_arg(cgexec_arg, subsystem_name, cgroup_relative_path, cgroup_conf)
 
-        return cgexec_arg
-
-    except Exception:
-        logger.exception("failed to get cgexec arg")
-        return cgexec_arg
+    return cgexec_arg
 
 
 def run(**argkv):
