@@ -83,7 +83,7 @@ class TestBlkio(unittest.TestCase):
 
     def test_blkio_weight(self):
         if _should_skip_cgroup_test():
-            return
+            self.skipTest("cgroup tests run only on Linux, outside CI")
 
         manager = multiprocessing.Manager()
         result_dict = manager.dict()
