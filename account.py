@@ -48,8 +48,7 @@ def _run(context, slot_number):
 
     key_name = f"{context['redis_prefix']}/account/{slot_number}"
 
-    redis_client.set(key_name, k3utfjson.dump(result))
-    redis_client.expire(key_name, context["redis_expire_time"])
+    redis_client.set(key_name, k3utfjson.dump(result), ex=context["redis_expire_time"])
 
 
 def run(context):
