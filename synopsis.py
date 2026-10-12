@@ -39,10 +39,12 @@ argkv = {
     "cgroup_dir": "/sys/fs/cgroup",
     "get_cgroup_pid_file": get_cgroup_pid_file,
     "get_zk_host": get_zk_host,
-    "zk_prefix": "/cluser_a/service_rank",
+    "zk_prefix": "/cluster_a/service_rank",
     "zk_auth_data": [("digest", "super:123456")],
     "communicate_ip": "127.0.0.1",
-    "communicate_port": "3344",
+    "communicate_port": 3344,
+    "redis_ip": "127.0.0.1",
+    "redis_port": 6379,
 }
 
 manager.run(**argkv)
@@ -50,7 +52,7 @@ manager.run(**argkv)
 argkv = {
     "cgroup_dir": "/sys/fs/cgroup",
     "get_zk_host": get_zk_host,
-    "zk_prefix": "/cluser_a/service_rank",
+    "zk_prefix": "/cluster_a/service_rank",
     "zk_auth_data": [("digest", "super:123456")],
 }
 cgexec_arg = manager.get_cgexec_arg(["test_cgroup_a"], **argkv)
