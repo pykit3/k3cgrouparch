@@ -57,5 +57,5 @@ cgexec_arg = manager.get_cgexec_arg(["test_cgroup_a"], **argkv)
 
 # return like:
 # {
-#     'test_cgroup_a': '-g cpu:test_cgroup_a',
+#     'test_cgroup_a': ' -g cpu:/test_cgroup_a',
 # }
