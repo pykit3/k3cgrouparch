@@ -26,6 +26,40 @@ def _should_skip_cgroup_test() -> bool:
     return k3ut.has_env("TRAVIS=true") or k3ut.has_env("CI=true")
 
 
+def _blkio_worker(index, duration, result_dict):
+    # Module-level so that multiprocessing can pickle it: the forkserver and
+    # spawn start methods pickle the target, and a bound method would drag in
+    # the TestCase that pytest attaches unpicklable fixtures to.
+
+    # wait for the cgroup directory tree to be setup.
+    time.sleep(0.2)
+
+    m = mmap.mmap(-1, 1024 * 1024 * 2)
+    data = " " * 1024 * 1024 * 2
+    m.write(data.encode())
+
+    file_path = os.path.join(base_dir, f"test_file_{index}")
+    f = os.open(file_path, os.O_CREAT | os.O_DIRECT | os.O_TRUNC | os.O_RDWR)
+
+    start_time = time.time()
+    dd(f"worker {index} {os.getpid()} started at: {start_time:f}")
+
+    count = 0
+    while True:
+        os.write(f, m)
+        count += 1
+        dd(f"worker {index} {os.getpid()} wrote {count} times")
+
+        if time.time() - start_time > duration:
+            break
+
+    dd(f"worker {index} {os.getpid()} stoped at: {time.time():f}")
+
+    result_dict[index] = count
+
+    os.close(f)
+
+
 class TestBlkio(unittest.TestCase):
     def test_account(self):
         cgroup_path = tempfile.mkdtemp()
@@ -52,35 +86,6 @@ class TestBlkio(unittest.TestCase):
 
         k3fs.remove(cgroup_path)
 
-    def worker(self, index, duration, result_dict):
-        # wait for the cgroup directory tree to be setup.
-        time.sleep(0.2)
-
-        m = mmap.mmap(-1, 1024 * 1024 * 2)
-        data = " " * 1024 * 1024 * 2
-        m.write(data.encode())
-
-        file_path = os.path.join(base_dir, f"test_file_{index}")
-        f = os.open(file_path, os.O_CREAT | os.O_DIRECT | os.O_TRUNC | os.O_RDWR)
-
-        start_time = time.time()
-        dd(f"worker {index} {os.getpid()} started at: {start_time:f}")
-
-        count = 0
-        while True:
-            os.write(f, m)
-            count += 1
-            dd(f"worker {index} {os.getpid()} wrote {count} times")
-
-            if time.time() - start_time > duration:
-                break
-
-        dd(f"worker {index} {os.getpid()} stoped at: {time.time():f}")
-
-        result_dict[index] = count
-
-        os.close(f)
-
     def test_blkio_weight(self):
         if _should_skip_cgroup_test():
             self.skipTest("cgroup tests run only on Linux, outside CI")
@@ -88,19 +93,19 @@ class TestBlkio(unittest.TestCase):
         manager = multiprocessing.Manager()
         result_dict = manager.dict()
 
-        p1 = multiprocessing.Process(target=self.worker, args=(1, 10, result_dict))
+        p1 = multiprocessing.Process(target=_blkio_worker, args=(1, 10, result_dict))
         p1.daemon = True
         p1.start()
 
-        p2 = multiprocessing.Process(target=self.worker, args=(2, 10, result_dict))
+        p2 = multiprocessing.Process(target=_blkio_worker, args=(2, 10, result_dict))
         p2.daemon = True
         p2.start()
 
-        p3 = multiprocessing.Process(target=self.worker, args=(3, 10, result_dict))
+        p3 = multiprocessing.Process(target=_blkio_worker, args=(3, 10, result_dict))
         p3.daemon = True
         p3.start()
 
-        p4 = multiprocessing.Process(target=self.worker, args=(4, 10, result_dict))
+        p4 = multiprocessing.Process(target=_blkio_worker, args=(4, 10, result_dict))
         p4.daemon = True
         p4.start()
 

@@ -21,34 +21,40 @@ def _should_skip_cgroup_test() -> bool:
     return k3ut.has_env("CI=true")
 
 
+def _compute_work():
+    i = 0
+    while True:
+        i += 1
+        if i > 1024 * 1024:
+            break
+
+
+def _cpu_worker(index, duration, result_dict):
+    # Module-level so that multiprocessing can pickle it: the forkserver and
+    # spawn start methods pickle the target, and a bound method would drag in
+    # the TestCase that pytest attaches unpicklable fixtures to.
+
+    # wait for the cgroup directory tree to be setup.
+    time.sleep(0.2)
+
+    start_time = time.time()
+    dd(f"worker {index} {os.getpid()} started at: {start_time:f}")
+
+    count = 0
+    while True:
+        _compute_work()
+        count += 1
+        dd(f"worker {index} {os.getpid()} computed {count} times")
+
+        if time.time() - start_time > duration:
+            break
+
+    dd(f"worker {index} {os.getpid()} stoped at: {time.time():f}")
+
+    result_dict[index] = count
+
+
 class TestCpu(unittest.TestCase):
-    def compute_work(self):
-        i = 0
-        while True:
-            i += 1
-            if i > 1024 * 1024:
-                break
-
-    def worker(self, index, duration, result_dict):
-        # wait for the cgroup directory tree to be setup.
-        time.sleep(0.2)
-
-        start_time = time.time()
-        dd(f"worker {index} {os.getpid()} started at: {start_time:f}")
-
-        count = 0
-        while True:
-            self.compute_work()
-            count += 1
-            dd(f"worker {index} {os.getpid()} computed {count} times")
-
-            if time.time() - start_time > duration:
-                break
-
-        dd(f"worker {index} {os.getpid()} stoped at: {time.time():f}")
-
-        result_dict[index] = count
-
     def test_cpu_share(self):
         if _should_skip_cgroup_test():
             self.skipTest("cgroup tests run only on Linux, outside CI")
@@ -56,15 +62,15 @@ class TestCpu(unittest.TestCase):
         manager = multiprocessing.Manager()
         result_dict = manager.dict()
 
-        p1 = multiprocessing.Process(target=self.worker, args=(1, 10, result_dict))
+        p1 = multiprocessing.Process(target=_cpu_worker, args=(1, 10, result_dict))
         p1.daemon = True
         p1.start()
 
-        p2 = multiprocessing.Process(target=self.worker, args=(2, 10, result_dict))
+        p2 = multiprocessing.Process(target=_cpu_worker, args=(2, 10, result_dict))
         p2.daemon = True
         p2.start()
 
-        p3 = multiprocessing.Process(target=self.worker, args=(3, 10, result_dict))
+        p3 = multiprocessing.Process(target=_cpu_worker, args=(3, 10, result_dict))
         p3.daemon = True
         p3.start()
 
