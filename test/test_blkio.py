@@ -19,11 +19,16 @@ random.seed(time.time())
 base_dir = os.path.dirname(__file__)
 
 
-def _should_skip_cgroup_test() -> bool:
-    """Skip cgroup tests on non-Linux or CI environments."""
+def _cgroup_test_skip_reason() -> str | None:
+    """Return why the blkio cgroup test cannot run on this host, or None if it can."""
     if sys.platform != "linux":
-        return True
-    return k3ut.has_env("TRAVIS=true") or k3ut.has_env("CI=true")
+        return "cgroup tests run only on Linux"
+    if k3ut.has_env("TRAVIS=true") or k3ut.has_env("CI=true"):
+        return "cgroup tests do not run in CI"
+    # k3cgrouparch supports only cgroup v1; a host that mounts only cgroup v2 has no blkio directory.
+    if not os.path.isdir("/sys/fs/cgroup/blkio"):
+        return "requires the cgroup v1 blkio hierarchy at /sys/fs/cgroup/blkio"
+    return None
 
 
 def _blkio_worker(index, duration, result_dict):
@@ -87,8 +92,9 @@ class TestBlkio(unittest.TestCase):
         k3fs.remove(cgroup_path)
 
     def test_blkio_weight(self):
-        if _should_skip_cgroup_test():
-            self.skipTest("cgroup tests run only on Linux, outside CI")
+        skip_reason = _cgroup_test_skip_reason()
+        if skip_reason is not None:
+            self.skipTest(skip_reason)
 
         manager = multiprocessing.Manager()
         result_dict = manager.dict()

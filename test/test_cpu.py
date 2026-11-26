@@ -14,11 +14,16 @@ dd = k3ut.dd
 random.seed(time.time())
 
 
-def _should_skip_cgroup_test() -> bool:
-    """Skip cgroup tests on non-Linux or CI environments."""
+def _cgroup_test_skip_reason() -> str | None:
+    """Return why the cpu cgroup test cannot run on this host, or None if it can."""
     if sys.platform != "linux":
-        return True
-    return k3ut.has_env("CI=true")
+        return "cgroup tests run only on Linux"
+    if k3ut.has_env("CI=true"):
+        return "cgroup tests do not run in CI"
+    # k3cgrouparch supports only cgroup v1; a host that mounts only cgroup v2 has no cpu directory.
+    if not os.path.isdir("/sys/fs/cgroup/cpu"):
+        return "requires the cgroup v1 cpu hierarchy at /sys/fs/cgroup/cpu"
+    return None
 
 
 def _compute_work():
@@ -56,8 +61,9 @@ def _cpu_worker(index, duration, result_dict):
 
 class TestCpu(unittest.TestCase):
     def test_cpu_share(self):
-        if _should_skip_cgroup_test():
-            self.skipTest("cgroup tests run only on Linux, outside CI")
+        skip_reason = _cgroup_test_skip_reason()
+        if skip_reason is not None:
+            self.skipTest(skip_reason)
 
         manager = multiprocessing.Manager()
         result_dict = manager.dict()
